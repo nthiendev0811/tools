@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Comparison Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6741 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .api-setup {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .api-setup input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .usage-calculator {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 400px;
+        }
+
+        .calculator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calculator-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+
+        .info-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .info-btn:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .calculator-inputs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 120px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .input-group small {
+            color: #6c757d;
+            font-size: 0.8em;
+            margin-top: 3px;
+        }
+
+        .info-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .info-content {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .reference-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .reference-card h5 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .example-compact {
+            background: white;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            border-left: 3px solid #007bff;
+        }
+
+        .preset-apply {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .preset-apply button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .preset-apply button:hover {
+            background: #0056b3;
+        }
+
+        .quick-tips {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .quick-tips h5 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .tips-grid span {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            border-left: 3px solid #28a745;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .api-input-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .calculator-inputs {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .usage-calculator {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .usage-calculator input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            width: 120px;
+            font-size: 14px;
+        }
+
+        .usage-calculator label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .last-updated {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 0 30px 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #343a40, #495057);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.001);
+            transition: all 0.2s ease;
+        }
+
+        .model-name {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .recommended {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
+            border-left: 4px solid #28a745;
+        }
+
+        .provider {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: white;
+        }
+
+        .openai { background: #10a37f; }
+        .google { background: #4285f4; }
+        .anthropic { background: #d97706; }
+        .deepseek { background: #7c3aed; }
+        .meta { background: #1877f2; }
+        .alibaba { background: #ff6a00; }
+
+        .price {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .cost-estimate {
+            font-weight: 700;
+            font-size: 1.1em;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            color: #1565c0;
+        }
+
+        .pros-cons {
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .pros { color: #28a745; }
+        .cons { color: #dc3545; }
+
+        .score {
+            font-weight: 700;
+            font-size: 1.2em;
+            padding: 8px;
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-high { background: #28a745; }
+        .score-medium { background: #ffc107; color: #000; }
+        .score-low { background: #dc3545; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .usage-calculator {
+                justify-content: center;
+            }
+            
+            .table-container {
+                margin: 0 15px 15px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Model Comparison Dashboard</h1>
+            <p>Real-time pricing and feature comparison for AI model selection</p>
+        </div>
+
+        <div class="controls">
+            <div class="api-setup">
+                <label>Gemini API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your Gemini API key" style="width: 300px; margin-right: 10px;">
+                <button class="refresh-btn" onclick="refreshData()">
+                    <span id="refresh-icon">🔄</span>
+                    Refresh Data
+                </button>
+            </div>
+            
+            <div class="usage-calculator">
+                <div class="calculator-header">
+                    <h3>💡 Usage Calculator</h3>
+                    <button class="info-btn" onclick="toggleInfoPanel()">ℹ️ Examples & Help</button>
+                </div>
+                
+                <div class="calculator-inputs">
+                    <div class="input-group">
+                        <label>Monthly Queries:</label>
+                        <input type="number" id="monthlyQueries" value="10000" onchange="calculateCosts()">
+                        <small>How many requests per month</small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Avg Input Tokens:</label>
+                        <input type="number" id="inputTokens" value="50" onchange="calculateCosts()">
+                        <small>User message length</small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Avg Output Tokens:</label>
+                        <input type="number" id="outputTokens" value="200" onchange="calculateCosts()">
+                        <small>Bot response length</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel" id="infoPanel" style="display: none;">
+                <div class="info-content">
+                    <h4>📚 Understanding Usage Metrics</h4>
+                    
+                    <div class="example-section">
+                        <h5>🔢 What are Tokens?</h5>
+                        <p>Tokens are pieces of words. Roughly:</p>
+                        <ul>
+                            <li><strong>1 token ≈ 4 characters</strong> in English</li>
+                            <li><strong>1 token ≈ 0.75 words</strong> on average</li>
+                            <li><strong>100 tokens ≈ 75 words</strong></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="example-section">
+                        <h5>💬 Example Use Cases</h5>
+                        
+                        <div class="use-case">
+                            <strong>Customer Service Bot (Your Use Case):</strong>
+                            <div class="example-box">
+                                <div class="example-input">
+                                    👤 <strong>Input (50 tokens):</strong><br>
+                                    "Hi, can you check my transaction FO2025081230011917?"
+                                </div>
+                                <div class="example-output">
+                                    🤖 <strong>Output (200 tokens):</strong><br>
+                                    "✅ Transaction completed successfully!<br>
+                                    💰 Amount: 1,500,000 VND<br>
+                                    👤 To: NGUYEN VAN A<br>
+                                    🏦 Bank: VIETCOMBANK<br>
+                                    📋 Reference: FO2025..."
+                                </div>
+                            </div>
+                            <div class="metrics">
+                                📊 <strong>Typical Metrics:</strong> 5,000-50,000 queries/month
+                            </div>
+                        </div>
+                        
+                        <div class="use-case">
+                            <strong>Simple FAQ Bot:</strong>
+                            <div class="example-box">
+                                <div class="example-input">
+                                    👤 <strong>Input (20 tokens):</strong> "What are your business hours?"
+                                </div>
+                                <div class="example-output">
+                                    🤖 <strong>Output (50 tokens):</strong> "We're open Monday-Friday 9AM-6PM, Saturday 10AM-4PM. Closed Sundays."
+                                </div>
+                            </div>
+                            <div class="metrics">
+                                📊 <strong>Typical Metrics:</strong> 1,000-10,000 queries/month
+                            </div>
+                        </div>
+                        
+                        <div class="use-case">
+                            <strong>Code Assistant:</strong>
+                            <div class="example-box">
+                                <div class="example-input">
+                                    👤 <strong>Input (100 tokens):</strong> "Write a Python function to calculate compound interest with principal, rate, and time parameters"
+                                </div>
+                                <div class="example-output">
+                                    🤖 <strong>Output (500 tokens):</strong> "Here's a Python function for compound interest calculation:\n\n```python\ndef compound_interest(principal, rate, time, n=1):\n    amount = principal * (1 + rate/n)**(n*time)..."
+                                </div>
+                            </div>
+                            <div class="metrics">
+                                📊 <strong>Typical Metrics:</strong> 500-5,000 queries/month
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-section">
+                        <h5>🎯 Quick Presets</h5>
+                        <div class="presets">
+                            <button class="preset-btn" onclick="setPreset('customer-service')">
+                                Customer Service Bot<br>
+                                <small>10k queries, 50 in, 200 out</small>
+                            </button>
+                            <button class="preset-btn" onclick="setPreset('simple-faq')">
+                                Simple FAQ Bot<br>
+                                <small>5k queries, 20 in, 50 out</small>
+                            </button>
+                            <button class="preset-btn" onclick="setPreset('code-assistant')">
+                                Code Assistant<br>
+                                <small>1k queries, 100 in, 500 out</small>
+                            </button>
+                            <button class="preset-btn" onclick="setPreset('content-generator')">
+                                Content Generator<br>
+                                <small>2k queries, 150 in, 800 out</small>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="example-section">
+                        <h5>💡 Pro Tips</h5>
+                        <ul>
+                            <li><strong>Start small:</strong> Begin with lower estimates and scale up</li>
+                            <li><strong>Monitor usage:</strong> Most platforms provide usage analytics</li>
+                            <li><strong>Buffer for growth:</strong> Add 20-30% buffer for unexpected usage spikes</li>
+                            <li><strong>Test different models:</strong> Compare costs vs quality for your specific use case</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="last-updated">
+                Last updated: <span id="lastUpdated">-</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalModels">11</div>
+                <div class="stat-label">Models Compared</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="cheapestModel">$10</div>
+                <div class="stat-label">Cheapest (Monthly)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="recommendedModel">Gemini Flash</div>
+                <div class="stat-label">Top Recommendation</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgCost">$156</div>
+                <div class="stat-label">Average Monthly Cost</div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Fetching latest pricing data...</p>
+        </div>
+
+        <div class="table-container">
+            <table id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Provider</th>
+                        <th>Input Price</th>
+                        <th>Output Price</th>
+                        <th>Calculated Cost</th>
+                        <th>Pros</th>
+                        <th>Cons</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // AI Model Data (in a real app, this would come from an API)
+        const modelData = [
+            {
+                model: "GPT-4o",
+                provider: "OpenAI",
+                inputPrice: 5.0,
+                outputPrice: 15.0,
+                pros: "Excellent reasoning, Multimodal support, Large context (128k), High accuracy",
+                cons: "Most expensive, Rate limits, No free tier",
+                score: 7,
+                recommended: false,
+                providerClass: "openai"
+            },
+            {
+                model: "GPT-4o Mini",
+                provider: "OpenAI", 
+                inputPrice: 0.15,
+                outputPrice: 0.60,
+                pros: "Good performance, Cost-effective, Fast response, 128k context",
+                cons: "Less capable than GPT-4o, Still relatively expensive, OpenAI dependency",
+                score: 8,
+                recommended: false,
+                providerClass: "openai"
+            },
+            {
+                model: "Gemini Flash ⭐",
+                provider: "Google",
+                inputPrice: 0.075,
+                outputPrice: 0.30,
+                pros: "Very cost-effective, Fast inference, 1M context window, Good for high volume",
+                cons: "Lower quality output, Less sophisticated, Limited complex reasoning",
+                score: 9,
+                recommended: true,
+                providerClass: "google"
+            },
+            {
+                model: "Gemini Pro 1.5",
+                provider: "Google",
+                inputPrice: 3.50,
+                outputPrice: 10.50,
+                pros: "2M context window, Multimodal capabilities, Good reasoning, Google integration",
+                cons: "Newer, less tested, Variable performance, Limited availability",
+                score: 7,
+                recommended: false,
+                providerClass: "google"
+            },
+            {
+                model: "Claude 3.5 Sonnet",
+                provider: "Anthropic",
+                inputPrice: 3.0,
+                outputPrice: 15.0,
+                pros: "Superior coding ability, Excellent reasoning, Safety-focused, 200k context",
+                cons: "Expensive, Slower responses, Limited availability, Conservative outputs",
+                score: 8,
+                recommended: false,
+                providerClass: "anthropic"
+            },
+            {
+                model: "Claude 3 Haiku",
+                provider: "Anthropic",
+                inputPrice: 0.25,
+                outputPrice: 1.25,
+                pros: "Very fast, Cost-effective, Good for simple tasks, Anthropic safety",
+                cons: "Limited capabilities, Not for complex tasks, Smaller context window",
+                score: 8,
+                recommended: false,
+                providerClass: "anthropic"
+            },
+            {
+                model: "DeepSeek V3",
+                provider: "DeepSeek",
+                inputPrice: 0.14,
+                outputPrice: 0.28,
+                pros: "Extremely cost-effective, Good coding performance, Open source available, No censorship",
+                cons: "Newer provider, Limited documentation, Potential reliability issues, Less ecosystem support",
+                score: 8,
+                recommended: false,
+                providerClass: "deepseek"
+            },
+            {
+                model: "DeepSeek Coder",
+                provider: "DeepSeek", 
+                inputPrice: 0.14,
+                outputPrice: 0.28,
+                pros: "Specialized for coding, Very affordable, Good performance, Fast inference",
+                cons: "Limited to coding tasks, Less general knowledge, Newer, less proven",
+                score: 7,
+                recommended: false,
+                providerClass: "deepseek"
+            },
+            {
+                model: "Llama 3.1 405B",
+                provider: "Meta",
+                inputPrice: 5.5, // Average of range
+                outputPrice: 5.5,
+                pros: "Open source, Strong performance, Self-hostable, No vendor lock-in",
+                cons: "Requires technical setup, Infrastructure costs, Maintenance overhead",
+                score: 7,
+                recommended: false,
+                providerClass: "meta"
+            },
+            {
+                model: "Qwen 2.5 72B",
+                provider: "Alibaba",
+                inputPrice: 1.25, // Average of range  
+                outputPrice: 1.25,
+                pros: "Good multilingual support, Cost-effective, Strong Asian language support, Open source",
+                cons: "Limited English documentation, Smaller ecosystem, Provider dependency",
+                score: 6,
+                recommended: false,
+                providerClass: "alibaba"
+            }
+        ];
+
+        function calculateCosts() {
+            const monthlyQueries = parseInt(document.getElementById('monthlyQueries').value) || 10000;
+            const inputTokens = parseInt(document.getElementById('inputTokens').value) || 50;
+            const outputTokens = parseInt(document.getElementById('outputTokens').value) || 200;
+            
+            const totalInputTokens = monthlyQueries * inputTokens;
+            const totalOutputTokens = monthlyQueries * outputTokens;
+            
+            renderTable(totalInputTokens, totalOutputTokens);
+            updateStats();
+        }
+
+        function renderTable(totalInputTokens, totalOutputTokens) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            // Calculate costs and sort by calculated cost
+            const modelsWithCosts = currentModelData.map(model => {
+                const calculatedCost = ((totalInputTokens / 1000000) * model.inputPrice) + 
+                                    ((totalOutputTokens / 1000000) * model.outputPrice);
+                return { ...model, calculatedCost };
+            }).sort((a, b) => a.calculatedCost - b.calculatedCost);
+            
+            modelsWithCosts.forEach(model => {
+                const row = document.createElement('tr');
+                if (model.recommended) {
+                    row.classList.add('recommended');
+                }
+                
+                const scoreClass = model.score >= 8 ? 'score-high' : 
+                                 model.score >= 6 ? 'score-medium' : 'score-low';
+                
+                row.innerHTML = `
+                    <td class="model-name">${model.model}</td>
+                    <td><span class="provider ${model.providerClass}">${model.provider}</span></td>
+                    <td class="price">$${model.inputPrice.toFixed(3)}</td>
+                    <td class="price">$${model.outputPrice.toFixed(3)}</td>
+                    <td class="cost-estimate">$${model.calculatedCost.toFixed(2)}</td>
+                    <td class="pros-cons pros">${model.pros}</td>
+                    <td class="pros-cons cons">${model.cons}</td>
+                    <td><div class="score ${scoreClass}">${model.score}</div></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            const monthlyQueries = parseInt(document.getElementById('monthlyQueries').value) || 10000;
+            const inputTokens = parseInt(document.getElementById('inputTokens').value) || 50;
+            const outputTokens = parseInt(document.getElementById('outputTokens').value) || 200;
+            
+            const totalInputTokens = monthlyQueries * inputTokens;
+            const totalOutputTokens = monthlyQueries * outputTokens;
+            
+            const costs = currentModelData.map(model => 
+                ((totalInputTokens / 1000000) * model.inputPrice) + 
+                ((totalOutputTokens / 1000000) * model.outputPrice)
+            );
+            
+            const minCost = Math.min(...costs);
+            const avgCost = costs.reduce((a, b) => a + b, 0) / costs.length;
+            
+            document.getElementById('totalModels').textContent = currentModelData.length;
+            document.getElementById('cheapestModel').textContent = `$${minCost.toFixed(0)}`;
+            document.getElementById('avgCost').textContent = `$${avgCost.toFixed(0)}`;
+        }
+
+        function toggleInfoPanel() {
+            const panel = document.getElementById('infoPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function setPreset(presetType) {
+            const presets = {
+                'customer-service': { queries: 10000, input: 50, output: 200 },
+                'simple-faq': { queries: 5000, input: 20, output: 50 },
+                'code-assistant': { queries: 1000, input: 100, output: 500 },
+                'content-generator': { queries: 2000, input: 150, output: 800 }
+            };
+            
+            const preset = presets[presetType];
+            if (preset) {
+                document.getElementById('monthlyQueries').value = preset.queries;
+                document.getElementById('inputTokens').value = preset.input;
+                document.getElementById('outputTokens').value = preset.output;
+                calculateCosts();
+                toggleInfoPanel(); // Close the panel
+            }
+        }
+
+        // Close info panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('infoPanel');
+            const infoBtn = document.querySelector('.info-btn');
+            
+            if (panel.style.display === 'block' && 
+                !panel.querySelector('.info-content').contains(event.target) && 
+                !infoBtn.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        // Global variable to store latest data
+        let currentModelData = [...modelData];
+
+        async function fetchDataFromGemini() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!apiKey) {
+                showApiKeyAlert();
+                return null;
+            }
+
+            const prompt = `Please provide the latest pricing information for AI models as of August 2025. Return the data in JSON format with the following structure for each model:
+
+{
+  "models": [
+    {
+      "model": "model name",
+      "provider": "provider name", 
+      "inputPrice": price per 1M input tokens in USD,
+      "outputPrice": price per 1M output tokens in USD,
+      "pros": "comma separated pros",
+      "cons": "comma separated cons",
+      "score": rating from 1-10,
+      "recommended": boolean,
+      "providerClass": "css class name"
+    }
+  ]
+}
+
+Include these models:
+- GPT-4o, GPT-4o Mini (OpenAI)
+- Gemini Pro 1.5, Gemini Flash (Google)  
+- Claude 3.5 Sonnet, Claude 3 Haiku (Anthropic)
+- DeepSeek V3, DeepSeek Coder (DeepSeek)
+- Llama 3.1 405B (Meta)
+- Qwen 2.5 72B (Alibaba)
+
+Focus on accuracy for pricing and provide current market positioning. Recommend Gemini Flash for cost-effective customer service bots.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.1,
+                            maxOutputTokens: 4000,
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 400) {
+                        showInvalidApiKeyAlert();
+                        return null;
+                    }
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const textResponse = data.candidates[0].content.parts[0].text;
+                    console.log('Raw Gemini response:', textResponse);
+                    
+                    // Extract JSON from the response
+                    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsedData = JSON.parse(jsonMatch[0]);
+                        if (parsedData.models && Array.isArray(parsedData.models)) {
+                            return parsedData.models;
+                        }
+                    }
+                    
+                    // Fallback: try to parse the entire response as JSON
+                    try {
+                        const parsedData = JSON.parse(textResponse);
+                        if (parsedData.models) {
+                            return parsedData.models;
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse JSON:', e);
+                    }
+                }
+                
+                throw new Error('Invalid response format from Gemini API');
+                
+            } catch (error) {
+                console.error('Error fetching data from Gemini:', error);
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    showInvalidApiKeyAlert();
+                } else {
+                    alert(`Error fetching data: ${error.message}`);
+                }
+                return null;
+            }
+        }
+
+        function showApiKeyAlert() {
+            const alertMessage = `
+🔑 API Key Required!
+
+To get real-time pricing data, you need a Gemini API key.
+
+📋 How to get your free API key:
+1. Visit: https://makersuite.google.com/app/apikey
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy and paste it above
+
+💡 The API key is free and gives you generous usage limits!
+            `;
+            alert(alertMessage);
+        }
+
+        function showInvalidApiKeyAlert() {
+            const alertMessage = `
+❌ Invalid API Key!
+
+Your Gemini API key appears to be invalid or expired.
+
+🔧 Please check:
+• Make sure you copied the entire key
+• Verify the key is active in Google AI Studio
+• Check if you have API quota remaining
+
+🔗 Get a new API key at:
+https://makersuite.google.com/app/apikey
+
+💡 Tip: API keys are free and take just 30 seconds to create!
+            `;
+            alert(alertMessage);
+        }
+
+        async function refreshData() {
+            const loading = document.getElementById('loading');
+            const refreshIcon = document.getElementById('refresh-icon');
+            const lastUpdated = document.getElementById('lastUpdated');
+            
+            // Show loading
+            loading.style.display = 'block';
+            refreshIcon.style.animation = 'spin 1s linear infinite';
+            
+            try {
+                // Fetch fresh data from Gemini API
+                const freshData = await fetchDataFromGemini();
+                
+                if (freshData && freshData.length > 0) {
+                    // Update current data with fresh data
+                    currentModelData = freshData.map(model => ({
+                        model: model.model || 'Unknown Model',
+                        provider: model.provider || 'Unknown',
+                        inputPrice: parseFloat(model.inputPrice) || 0,
+                        outputPrice: parseFloat(model.outputPrice) || 0,
+                        pros: model.pros || 'No information available',
+                        cons: model.cons || 'No information available', 
+                        score: parseInt(model.score) || 5,
+                        recommended: model.recommended || false,
+                        providerClass: model.providerClass || 'unknown'
+                    }));
+                    
+                    console.log('Updated model data:', currentModelData);
+                    
+                    // Recalculate and refresh display
+                    calculateCosts();
+                    lastUpdated.textContent = new Date().toLocaleString();
+                    
+                    // Success feedback
+                    const btn = document.querySelector('.refresh-btn');
+                    const originalBg = btn.style.background;
+                    btn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                    btn.textContent = '✅ Data Updated!';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = '<span id="refresh-icon">🔄</span> Refresh Data';
+                        btn.style.background = originalBg;
+                    }, 2000);
+                    
+                } else {
+                    // Fallback to simulated update if API fails
+                    modelData.forEach(model => {
+                        const variation = 0.95 + (Math.random() * 0.1);
+                        model.inputPrice *= variation;
+                        model.outputPrice *= variation;
+                    });
+                    currentModelData = [...modelData];
+                    calculateCosts();
+                    lastUpdated.textContent = new Date().toLocaleString() + ' (Simulated)';
+                }
+                
+            } catch (error) {
+                console.error('Refresh failed:', error);
+                alert('Failed to refresh data. Using cached information.');
+            } finally {
+                loading.style.display = 'none';
+                refreshIcon.style.animation = 'none';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateCosts();
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+        });
+    </script>
+</body>
+</html>
