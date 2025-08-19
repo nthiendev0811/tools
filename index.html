@@ -491,6 +491,11 @@
                 font-size: 0.8em;
             }
         }
+        .align-xy {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -503,11 +508,8 @@
         <div class="controls">
             <div class="api-setup">
                 <label>Gemini API Key:</label>
-                <input type="password" id="apiKey" placeholder="Enter your Gemini API key" style="width: 300px; margin-right: 10px;">
-                <button class="refresh-btn" onclick="refreshData()">
-                    <span id="refresh-icon">🔄</span>
-                    Refresh Data
-                </button>
+                <input type="password" value="AIzaSyDflawqzZl_FcyUQF_9FA8QZL_AQ4TYmuI" id="apiKey" placeholder="Enter your Gemini API key" style="width: 300px; margin-right: 10px;">
+                <span onclick="refreshData()" id="refresh-icon">🔄</span>
             </div>
             
             <div class="usage-calculator">
@@ -519,21 +521,26 @@
                 <div class="calculator-inputs">
                     <div class="input-group">
                         <label>Monthly Queries:</label>
-                        <input type="number" id="monthlyQueries" value="10000" onchange="calculateCosts()">
+                        <input type="number" id="monthlyQueries" value="10000">
                         <small>How many requests per month</small>
                     </div>
                     
                     <div class="input-group">
                         <label>Avg Input Tokens:</label>
-                        <input type="number" id="inputTokens" value="50" onchange="calculateCosts()">
+                        <input type="number" id="inputTokens" value="50" >
                         <small>User message length</small>
                     </div>
-                    
                     <div class="input-group">
                         <label>Avg Output Tokens:</label>
-                        <input type="number" id="outputTokens" value="200" onchange="calculateCosts()">
+                        <input type="number" id="outputTokens" value="200" >
                         <small>Bot response length</small>
                     </div>
+                    <div class="input-group align-xy">
+                        <button class="refresh-btn" onclick="calculateCosts()">
+                            Refresh Data
+                        </button>
+                    </div>
+
                 </div>
             </div>
             
