@@ -105,10 +105,22 @@
             margin-bottom: 15px;
         }
 
+        @media (max-width: 768px) {
+            .calculator-header {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .calculator-header h3 {
+                margin-bottom: 8px;
+            }
+        }
+
         .calculator-header h3 {
             margin: 0;
             color: #2c3e50;
             font-size: 1.2em;
+            margin-right: 8px;
         }
 
         .info-btn {
@@ -496,6 +508,82 @@
             align-items: center;
             justify-content: center;
         }
+
+        .example-section {
+            margin: 20px 0;
+        }
+
+        .use-case {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .example-box {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
+        }
+
+        .example-input, .example-output {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .example-input {
+            background: #e3f2fd;
+        }
+
+        .example-output {
+            background: #e8f5e8;
+        }
+
+        .metrics {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .preset-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .preset-btn small {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        #refresh-icon {
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: color 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -519,7 +607,7 @@
                 </div>
                 
                 <div class="calculator-inputs">
-                    <div class="input-group">
+                    <div class="input-group align-xy">
                         <label>Monthly Queries:</label>
                         <input type="number" id="monthlyQueries" value="10000">
                         <small>How many requests per month</small>
@@ -546,6 +634,7 @@
             
             <div class="info-panel" id="infoPanel" style="display: none;">
                 <div class="info-content">
+                    <button class="close-btn" onclick="toggleInfoPanel()">×</button>
                     <h4>📚 Understanding Usage Metrics</h4>
                     
                     <div class="example-section">
@@ -658,16 +747,12 @@
                 <div class="stat-label">Models Compared</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="cheapestModel">$10</div>
-                <div class="stat-label">Cheapest (Monthly)</div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-value" id="recommendedModel">Gemini Flash</div>
                 <div class="stat-label">Top Recommendation</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="avgCost">$156</div>
-                <div class="stat-label">Average Monthly Cost</div>
+                <div class="stat-value" id="lowestCostModel">Gemini Flash</div>
+                <div class="stat-label">Cheapest Monthly Cost($<span id="avgCost">156</span>)</div>
             </div>
         </div>
 
@@ -682,9 +767,9 @@
                     <tr>
                         <th>Model</th>
                         <th>Provider</th>
-                        <th>Input Price</th>
-                        <th>Output Price</th>
-                        <th>Calculated Cost</th>
+                        <th><span>Input Price</span> <small >(1k token)</small></th>
+                        <th><span>Output Price</span> <small>(1k token)</small></th>
+                        <th>Average Monthly Cost</th>
                         <th>Pros</th>
                         <th>Cons</th>
                         <th>Score</th>
@@ -723,7 +808,7 @@
                 providerClass: "openai"
             },
             {
-                model: "Gemini Flash ⭐",
+                model: "Gemini Flash",
                 provider: "Google",
                 inputPrice: 0.075,
                 outputPrice: 0.30,
@@ -751,7 +836,7 @@
                 outputPrice: 15.0,
                 pros: "Superior coding ability, Excellent reasoning, Safety-focused, 200k context",
                 cons: "Expensive, Slower responses, Limited availability, Conservative outputs",
-                score: 8,
+                score: 9,
                 recommended: false,
                 providerClass: "anthropic"
             },
@@ -827,12 +912,22 @@
         function renderTable(totalInputTokens, totalOutputTokens) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
+            const monthlyQueries = parseInt(document.getElementById('monthlyQueries').value) || 10000;
+            const inputTokens = parseInt(document.getElementById('inputTokens').value) || 50;
+            const outputTokens = parseInt(document.getElementById('outputTokens').value) || 200;
             
             // Calculate costs and sort by calculated cost
             const modelsWithCosts = currentModelData.map(model => {
                 const calculatedCost = ((totalInputTokens / 1000000) * model.inputPrice) + 
                                     ((totalOutputTokens / 1000000) * model.outputPrice);
-                return { ...model, calculatedCost };
+                
+                // Calculate average monthly cost based on typical usage patterns
+                const avgInputTokens = monthlyQueries * totalInputTokens; // 10k queries * 75 tokens average
+                const avgOutputTokens = monthlyQueries * totalInputTokens; // 10k queries * 300 tokens average
+                const avgMonthlyCost = ((avgInputTokens / 1000000) * model.inputPrice) + 
+                                     ((avgOutputTokens / 1000000) * model.outputPrice);
+                
+                return { ...model, calculatedCost, avgMonthlyCost };
             }).sort((a, b) => a.calculatedCost - b.calculatedCost);
             
             modelsWithCosts.forEach(model => {
@@ -847,9 +942,9 @@
                 row.innerHTML = `
                     <td class="model-name">${model.model}</td>
                     <td><span class="provider ${model.providerClass}">${model.provider}</span></td>
-                    <td class="price">$${model.inputPrice.toFixed(3)}</td>
-                    <td class="price">$${model.outputPrice.toFixed(3)}</td>
-                    <td class="cost-estimate">$${model.calculatedCost.toFixed(2)}</td>
+                    <td class="price">${model.inputPrice.toFixed(3)}</td>
+                    <td class="price">${model.outputPrice.toFixed(3)}</td>
+                    <td class="cost-estimate">${model.calculatedCost.toFixed(2)}</td>
                     <td class="pros-cons pros">${model.pros}</td>
                     <td class="pros-cons cons">${model.cons}</td>
                     <td><div class="score ${scoreClass}">${model.score}</div></td>
@@ -875,9 +970,29 @@
             const minCost = Math.min(...costs);
             const avgCost = costs.reduce((a, b) => a + b, 0) / costs.length;
             
+            // Find the model with the highest score (first one if there's a tie)
+            const highestScoringModel = currentModelData.reduce((prev, current) => {
+                if (current.score > prev.score) {
+                    return current;
+                } else if (current.score === prev.score && prev.model === "Gemini Flash") {
+                    // Prefer Gemini Flash if scores are tied
+                    return prev;
+                }
+                return prev;
+            });
+            // Find the model with the lowest cost
+            const lowestCostModel = currentModelData.reduce((prev, current) => {
+                const currentCost = ((totalInputTokens / 1000000) * current.inputPrice) + 
+                                    ((totalOutputTokens / 1000000) * current.outputPrice);
+                const prevCost = ((totalInputTokens / 1000000) * prev.inputPrice) + 
+                                  ((totalOutputTokens / 1000000) * prev.outputPrice);
+                return currentCost < prevCost ? current : prev;
+            });
+            
             document.getElementById('totalModels').textContent = currentModelData.length;
-            document.getElementById('cheapestModel').textContent = `$${minCost.toFixed(0)}`;
-            document.getElementById('avgCost').textContent = `$${avgCost.toFixed(0)}`;
+            document.getElementById('avgCost').textContent = `${minCost.toFixed(2)}`;
+            document.getElementById('lowestCostModel').textContent = lowestCostModel.model;
+            document.getElementById('recommendedModel').textContent = highestScoringModel.model;
         }
 
         function toggleInfoPanel() {
